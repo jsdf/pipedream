@@ -89,10 +89,9 @@ function PipedreamEngine(opts) {
   draw_piece(draw_elbow_piece, 0, 0, 0);
   draw_piece(draw_elbow_piece, 2, 2, -90);
   draw_piece(draw_elbow_piece, 2, 3, 90);
-  //draw_piece(draw_elbow_piece, 4, 4, -90);
-  //draw_piece(draw_straight_piece, 2, 0, 0);
-  //draw_piece(draw_straight_piece, 2, 0, 0);
-  //draw_piece(draw_straight_piece, 4, 0, 90);
+  draw_piece(draw_elbow_piece, 4, 4, -90);
+  draw_piece(draw_straight_piece, 2, 0, 0);
+  draw_piece(draw_straight_piece, 4, 0, 90);
 }
 
 
