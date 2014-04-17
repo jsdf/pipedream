@@ -38,47 +38,59 @@ function PipedreamEngine(opts) {
       }
     }
   }).bind(this);
-  
-  var draw_straight_pipe = (function draw_straight_pipe() {
-    for (var i = 0; i < this.cell_width / 2 - this.pipe_width / 2; i++) {
+
+  var draw_pipe_segment = (function draw_pipe_segment() {
       this.ctx.strokeStyle = this.pipe_color;
       this.ctx.beginPath();
       this.ctx.lineWidth = 1;
       this.ctx.moveTo(0, 0);
       this.ctx.lineTo(0, -1 * this.pipe_width);
       this.ctx.stroke();
+  }).bind(this);
+  
+  var draw_straight_pipe = (function draw_straight_pipe(length) {
+    for (var i = 0; i < length; i++) {
+      draw_pipe_segment();
       this.ctx.translate(1, 0);
     }
   }).bind(this);
 
-  var draw_elbow = (function draw_elbow(cellx, celly, rot_deg) {
+  var draw_elbow_piece = (function draw_elbow() {
+    var straight_pipe_length = this.cell_width / 2 - this.pipe_width / 2;
+    draw_straight_pipe(straight_pipe_length);
+
+    // the elbow joint is drawn in this loop
+    for (var i = 0; i < 90; i++) {
+      draw_pipe_segment();
+      this.ctx.rotate(Math.PI / 180);
+    }
+
+    draw_straight_pipe(straight_pipe_length);
+  }).bind(this);
+
+  var draw_straight_piece = (function draw_straight_piece() {
+    draw_straight_pipe(this.cell_width);
+  }).bind(this);
+
+  var draw_piece = (function draw_piece(piece_draw_func, cellx, celly, rot_deg) {
     this.ctx.save();
     this.ctx.translate(this.cell_width * cellx, this.cell_height * celly);
     this.ctx.rotate(rot_deg * Math.PI / 180);
     this.ctx.translate(0, this.cell_height / 2 + this.pipe_width / 2);
-    draw_straight_pipe();
-
-    // the elbow joint is drawn here
-    for (var i = 0; i < 90; i++) {
-      this.ctx.strokeStyle = this.pipe_color;
-      this.ctx.beginPath();
-      this.ctx.lineWidth = 1;
-      this.ctx.moveTo(0, 0);
-      this.ctx.lineTo(0, -1 * this.pipe_width);
-      this.ctx.stroke();
-      this.ctx.rotate(Math.PI / 180);
-    }
-
-    draw_straight_pipe();
+    piece_draw_func();
     this.ctx.restore();
   }).bind(this);
 
   clear_screen();
   draw_grid();
 
-  draw_elbow(0, 0, 0);
-  draw_elbow(3, 2, 90);
-  draw_elbow(4, 4, -90);
+  draw_piece(draw_elbow_piece, 0, 0, 0);
+  draw_piece(draw_elbow_piece, 2, 2, -90);
+  draw_piece(draw_elbow_piece, 2, 2, 90);
+  draw_piece(draw_elbow_piece, 4, 4, -90);
+  draw_piece(draw_straight_piece, 2, 0, 0);
+  draw_piece(draw_straight_piece, 2, 0, 0);
+  draw_piece(draw_straight_piece, 4, 0, 90);
 }
 
 
