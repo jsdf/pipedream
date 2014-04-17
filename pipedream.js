@@ -40,44 +40,45 @@ function PipedreamEngine(opts) {
   }).bind(this);
   
   var draw_straight_pipe = (function draw_straight_pipe() {
-    for (var x_offset = 0; x_offset < this.cell_width / 2 - this.pipe_width / 2; x_offset++) {
-      this.ctx.save();
+    for (var i = 0; i < this.cell_width / 2 - this.pipe_width / 2; i++) {
       this.ctx.strokeStyle = this.pipe_color;
       this.ctx.beginPath();
-      this.ctx.translate(0 + x_offset, this.cell_height / 2 + this.pipe_width / 2);
       this.ctx.lineWidth = 1;
       this.ctx.moveTo(0, 0);
       this.ctx.lineTo(0, -1 * this.pipe_width);
       this.ctx.stroke();
-      this.ctx.restore();
+      this.ctx.translate(1, 0);
     }
   }).bind(this);
 
-  var draw_elbow = (function draw_elbow() {
-      draw_straight_pipe();
-      for (var degrees = 0; degrees < 90; degrees++) {
-        this.ctx.save();
-        this.ctx.strokeStyle = this.pipe_color;
-        this.ctx.beginPath();
-        this.ctx.translate(this.cell_width / 2 - this.pipe_width / 2, this.cell_height / 2 + this.pipe_width / 2);
-        this.ctx.rotate(degrees * Math.PI / 180);
-        this.ctx.lineWidth = 1;
-        this.ctx.moveTo(0, 0);
-        this.ctx.lineTo(0, -1 * this.pipe_width);
-        this.ctx.stroke();
-        this.ctx.restore();
-      }
+  var draw_elbow = (function draw_elbow(cellx, celly, rot_deg) {
+    this.ctx.save();
+    this.ctx.translate(this.cell_width * cellx, this.cell_height * celly);
+    this.ctx.rotate(rot_deg * Math.PI / 180);
+    this.ctx.translate(0, this.cell_height / 2 + this.pipe_width / 2);
+    draw_straight_pipe();
 
-      this.ctx.save();
-      this.ctx.translate(this.cell_width, this.cell_height / 2 + this.pipe_width / 2);
-      this.ctx.rotate(90 * Math.PI / 180);
-      draw_straight_pipe();
-      this.ctx.restore();
+    // the elbow joint is drawn here
+    for (var i = 0; i < 90; i++) {
+      this.ctx.strokeStyle = this.pipe_color;
+      this.ctx.beginPath();
+      this.ctx.lineWidth = 1;
+      this.ctx.moveTo(0, 0);
+      this.ctx.lineTo(0, -1 * this.pipe_width);
+      this.ctx.stroke();
+      this.ctx.rotate(Math.PI / 180);
+    }
+
+    draw_straight_pipe();
+    this.ctx.restore();
   }).bind(this);
 
   clear_screen();
-  draw_elbow();
   draw_grid();
+
+  draw_elbow(0, 0, 0);
+  draw_elbow(3, 2, 90);
+  draw_elbow(4, 4, -90);
 }
 
 
