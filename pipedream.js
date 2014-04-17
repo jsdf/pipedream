@@ -37,7 +37,7 @@ function Pipedream(opts) {
 
   var draw_animated_line = (function draw_animated_line() {
     // put some sleeps between the strokes
-    for (var x_offset = 0; x_offset < this.cell_width / 2 - this.pipe_width; x_offset++) {
+    for (var x_offset = 0; x_offset < this.cell_width / 2 - this.pipe_width / 2; x_offset++) {
       context.save();
       context.strokeStyle = this.pipe_color;
       context.beginPath();
@@ -56,7 +56,7 @@ function Pipedream(opts) {
     for (var degrees = 0; degrees < 90; degrees++) {
       context.save();
       context.beginPath();
-      context.translate(this.cell_width / 2 - this.pipe_width, this.cell_height / 2 + this.pipe_width / 2);
+      context.translate(this.cell_width / 2 - this.pipe_width / 2, this.cell_height / 2 + this.pipe_width / 2);
       context.rotate(degrees * Math.PI / 180);
       context.strokeStyle = this.pipe_color;
       context.lineWidth = 1;
@@ -67,7 +67,7 @@ function Pipedream(opts) {
     }
 
     context.save();
-    context.translate(this.cell_width - this.pipe_width / 2, this.cell_height / 2 + this.pipe_width / 2);
+    context.translate(this.cell_width, this.cell_height / 2 + this.pipe_width / 2);
     context.rotate(90 * Math.PI / 180);
     draw_animated_line();
     context.restore();
