@@ -56,6 +56,7 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   var draw_elbow_piece = (function draw_elbow() {
+    this.ctx.translate(-this.cell_width / 2, this.pipe_width / 2);
     var straight_pipe_length = this.cell_width / 2 - this.pipe_width / 2;
     draw_straight_pipe(straight_pipe_length);
 
@@ -69,14 +70,15 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   var draw_straight_piece = (function draw_straight_piece() {
+    this.ctx.translate(-this.cell_width / 2, this.pipe_width / 2);
     draw_straight_pipe(this.cell_width);
   }).bind(this);
 
   var draw_piece = (function draw_piece(piece_draw_func, cellx, celly, rot_deg) {
     this.ctx.save();
+    this.ctx.translate(this.cell_width / 2, this.cell_height / 2);
     this.ctx.translate(this.cell_width * cellx, this.cell_height * celly);
     this.ctx.rotate(rot_deg * Math.PI / 180);
-    this.ctx.translate(0, this.cell_height / 2 + this.pipe_width / 2);
     piece_draw_func();
     this.ctx.restore();
   }).bind(this);
@@ -86,11 +88,11 @@ function PipedreamEngine(opts) {
 
   draw_piece(draw_elbow_piece, 0, 0, 0);
   draw_piece(draw_elbow_piece, 2, 2, -90);
-  draw_piece(draw_elbow_piece, 2, 2, 90);
-  draw_piece(draw_elbow_piece, 4, 4, -90);
-  draw_piece(draw_straight_piece, 2, 0, 0);
-  draw_piece(draw_straight_piece, 2, 0, 0);
-  draw_piece(draw_straight_piece, 4, 0, 90);
+  draw_piece(draw_elbow_piece, 2, 3, 90);
+  //draw_piece(draw_elbow_piece, 4, 4, -90);
+  //draw_piece(draw_straight_piece, 2, 0, 0);
+  //draw_piece(draw_straight_piece, 2, 0, 0);
+  //draw_piece(draw_straight_piece, 4, 0, 90);
 }
 
 
