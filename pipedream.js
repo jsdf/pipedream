@@ -28,6 +28,14 @@ function PipedreamEngine(opts) {
     }
 
     $canvas.attr({ width: this.width, height: this.height });
+    var mouseupfunc = (function(e){
+      var x = e.offsetX;
+      var y = e.offsetY;
+      var cellx = Math.floor(x / this.cell_width);
+      var celly = Math.floor(y / this.cell_height);
+      this.cells[cellx][celly].draw();
+    }).bind(this);
+    $canvas.mouseup(mouseupfunc);
 
     this.clear_screen();
     this.draw_grid();
@@ -39,14 +47,13 @@ function PipedreamEngine(opts) {
       draw_piece(draw_straight_piece, 2, 0, 0);
       draw_piece(draw_straight_piece, 4, 0, 90);*/
 
-    this.add_piece_and_draw(ElbowPiece, 0, 0, 0);
-    this.add_piece_and_draw(StraightPiece, 1, 0, 0, 'green');
+    this.add_piece(ElbowPiece, 0, 0, 0);
+    this.add_piece(StraightPiece, 1, 0, 0, 'green');
 
   }).bind(this);
 
-  this.add_piece_and_draw = (function add_piece_and_draw(piece_ctor, cellx, celly, rot_deg, color) {
-    this.cells[0][0] = new piece_ctor({cellx: cellx, celly: celly, rot_deg: rot_deg, color: color, game_engine: this});
-    this.cells[0][0].draw();
+  this.add_piece = (function add_piece_and_draw(piece_ctor, cellx, celly, rot_deg, color) {
+    this.cells[cellx][celly] = new piece_ctor({cellx: cellx, celly: celly, rot_deg: rot_deg, color: color, game_engine: this});
   }).bind(this);
 
   this.clear_screen = (function clear_screen() {
