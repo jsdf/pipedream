@@ -39,8 +39,8 @@ function PipedreamEngine(opts) {
       draw_piece(draw_straight_piece, 2, 0, 0);
       draw_piece(draw_straight_piece, 4, 0, 90);*/
 
-    this.add_piece_and_draw(ElbowPiece, 0, 0, 0, 'green');
-    this.add_piece_and_draw(StraightPiece, 1, 0, 0);
+    this.add_piece_and_draw(ElbowPiece, 0, 0, 0);
+    this.add_piece_and_draw(StraightPiece, 1, 0, 0, 'green');
 
   }).bind(this);
 
@@ -101,8 +101,8 @@ function StraightPiece(opts) {
   }).bind(this);
 
   this.draw = (function draw() {
-    this.game_engine.ctx.strokeStyle = this.color || this.pipe_color;
     this.game_engine.ctx.save();
+    this.game_engine.ctx.strokeStyle = this.color || this.pipe_color;
     // translate to the center of the cell we're going to draw
     this.game_engine.ctx.translate(this.game_engine.cell_width / 2, this.game_engine.cell_height / 2);
     this.game_engine.ctx.translate(this.game_engine.cell_width * this.cellx, this.game_engine.cell_height * this.celly);
