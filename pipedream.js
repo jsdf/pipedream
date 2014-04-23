@@ -14,21 +14,49 @@ function PipedreamEngine(opts) {
   this.cell_width = this.width / this.grid_width;
   this.cell_height = this.height / this.grid_height;
 
-  var $canvas = $("#" + opts.canvas_id);
-  var canvas = $canvas[0];
-  var context = canvas.getContext("2d");
-  this.ctx = context;
+  $canvas = $("#" + opts.canvas_id);
+  this.ctx = $canvas[0].getContext("2d");
+  this.cells = [];
 
-  $canvas.attr({ width: this.width, height: this.height });
+  this.ctor = (function() {
+    for (var i = 0; i < this.grid_width; i++) {
+      var columnArray = [];
+      for (var j = 0; j < this.grid_height; j++) {
+        columnArray[j] = {};
+      }
+      this.cells[i] = columnArray;
+    }
 
-  var clear_screen = (function clear_screen() {
+    $canvas.attr({ width: this.width, height: this.height });
+
+    this.clear_screen();
+    this.draw_grid();
+
+    /*draw_piece(draw_elbow_piece, 0, 0, 0, 'green');
+      draw_piece(draw_elbow_piece, 2, 2, -90);
+      draw_piece(draw_elbow_piece, 2, 3, 90);
+      draw_piece(draw_elbow_piece, 4, 4, -180);
+      draw_piece(draw_straight_piece, 2, 0, 0);
+      draw_piece(draw_straight_piece, 4, 0, 90);*/
+
+    this.add_piece_and_draw(ElbowPiece, 0, 0, 0, 'green');
+    this.add_piece_and_draw(StraightPiece, 1, 0, 0);
+
+  }).bind(this);
+
+  this.add_piece_and_draw = (function add_piece_and_draw(piece_ctor, cellx, celly, rot_deg, color) {
+    this.cells[0][0] = new piece_ctor({cellx: cellx, celly: celly, rot_deg: rot_deg, color: color, game_engine: this});
+    this.cells[0][0].draw();
+  }).bind(this);
+
+  this.clear_screen = (function clear_screen() {
     this.ctx.beginPath();
     this.ctx.rect(0, 0, this.width, this.height);
     this.ctx.fillStyle = this.background_color;
     this.ctx.fill();
   }).bind(this);
 
-  var draw_grid = (function draw_grid() {
+  this.draw_grid = (function draw_grid() {
     for (var i = 0; i < this.grid_width; i++) {
       for (var j = 0; j < this.grid_height; j++) {
         var x = i * this.cell_width;
@@ -42,62 +70,69 @@ function PipedreamEngine(opts) {
     }
   }).bind(this);
 
-  var draw_pipe_segment = (function draw_pipe_segment() {
-      this.ctx.beginPath();
-      this.ctx.lineWidth = 1;
-      this.ctx.moveTo(0, 0);
-      this.ctx.lineTo(0, -1 * this.pipe_width);
-      this.ctx.stroke();
+
+  this.ctor();
+}
+
+function StraightPiece(opts) {
+  this.cellx = opts.cellx;
+  this.celly = opts.celly;
+  this.rot_deg = opts.rot_deg;
+  this.color = opts.color || 'black';
+  this.game_engine = opts.game_engine;
+
+  this.draw_pipe_segment = (function draw_pipe_segment() {
+      this.game_engine.ctx.beginPath();
+      this.game_engine.ctx.lineWidth = 1;
+      this.game_engine.ctx.moveTo(0, 0);
+      this.game_engine.ctx.lineTo(0, -1 * this.game_engine.pipe_width);
+      this.game_engine.ctx.stroke();
   }).bind(this);
   
-  var draw_straight_pipe = (function draw_straight_pipe(length) {
+  this.draw_straight_pipe = (function draw_straight_pipe(length) {
     for (var i = 0; i < length; i++) {
-      draw_pipe_segment();
-      this.ctx.translate(1, 0);
+      this.draw_pipe_segment();
+      this.game_engine.ctx.translate(1, 0);
     }
   }).bind(this);
 
-  var draw_elbow_piece = (function draw_elbow() {
-    var straight_pipe_length = this.cell_width / 2 - this.pipe_width / 2;
-    draw_straight_pipe(straight_pipe_length);
+  this.render_func = (function render_func() {
+    this.draw_straight_pipe(this.game_engine.cell_width);
+  }).bind(this);
+
+  this.draw = (function draw() {
+    this.game_engine.ctx.strokeStyle = this.color || this.pipe_color;
+    this.game_engine.ctx.save();
+    // translate to the center of the cell we're going to draw
+    this.game_engine.ctx.translate(this.game_engine.cell_width / 2, this.game_engine.cell_height / 2);
+    this.game_engine.ctx.translate(this.game_engine.cell_width * this.cellx, this.game_engine.cell_height * this.celly);
+    // rotate the cell the desired number of degrees (about the center of the cell)
+    this.game_engine.ctx.rotate(this.rot_deg * Math.PI / 180);
+    // translate back to the left edge of the cell, so the drawing begins from there
+    this.game_engine.ctx.translate(-this.game_engine.cell_width / 2, this.game_engine.pipe_width / 2);
+    this.render_func();
+    this.game_engine.ctx.restore();
+  }).bind(this);
+}
+
+function ElbowPiece(opts) {
+  StraightPiece.call(this, opts);
+
+  this.render_func = (function render_func() {
+    var straight_pipe_length = this.game_engine.cell_width / 2 - this.game_engine.pipe_width / 2;
+    this.draw_straight_pipe(straight_pipe_length);
 
     // the elbow joint is drawn in this loop
     for (var i = 0; i < 90; i++) {
-      draw_pipe_segment();
-      this.ctx.rotate(Math.PI / 180);
+      this.draw_pipe_segment();
+      this.game_engine.ctx.rotate(Math.PI / 180);
     }
 
-    draw_straight_pipe(straight_pipe_length);
+    this.draw_straight_pipe(straight_pipe_length);
   }).bind(this);
-
-  var draw_straight_piece = (function draw_straight_piece() {
-    draw_straight_pipe(this.cell_width);
-  }).bind(this);
-
-  var draw_piece = (function draw_piece(piece_draw_func, cellx, celly, rot_deg, color) {
-    this.ctx.strokeStyle = color || this.pipe_color;
-    this.ctx.save();
-    // translate to the center of the cell we're going to draw
-    this.ctx.translate(this.cell_width / 2, this.cell_height / 2);
-    this.ctx.translate(this.cell_width * cellx, this.cell_height * celly);
-    // rotate the cell the desired number of degrees (about the center of the cell)
-    this.ctx.rotate(rot_deg * Math.PI / 180);
-    // translate back to the left edge of the cell, so the drawing begins from there
-    this.ctx.translate(-this.cell_width / 2, this.pipe_width / 2);
-    piece_draw_func();
-    this.ctx.restore();
-  }).bind(this);
-
-  clear_screen();
-  draw_grid();
-
-  draw_piece(draw_elbow_piece, 0, 0, 0, 'green');
-  draw_piece(draw_elbow_piece, 2, 2, -90);
-  draw_piece(draw_elbow_piece, 2, 3, 90);
-  draw_piece(draw_elbow_piece, 4, 4, -180);
-  draw_piece(draw_straight_piece, 2, 0, 0);
-  draw_piece(draw_straight_piece, 4, 0, 90);
 }
 
-
-
+// are these lines necessary?
+// see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create
+ElbowPiece.prototype = Object.create(StraightPiece.prototype);
+ElbowPiece.prototype.constructor = ElbowPiece;
