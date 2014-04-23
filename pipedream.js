@@ -1,3 +1,6 @@
+window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+
 function PipedreamEngine(opts) {
   this.background_color = opts.background_color || "gray";
   this.grid_color = opts.grid_color || "white";
@@ -40,7 +43,6 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   var draw_pipe_segment = (function draw_pipe_segment() {
-      this.ctx.strokeStyle = this.pipe_color;
       this.ctx.beginPath();
       this.ctx.lineWidth = 1;
       this.ctx.moveTo(0, 0);
@@ -56,7 +58,6 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   var draw_elbow_piece = (function draw_elbow() {
-    this.ctx.translate(-this.cell_width / 2, this.pipe_width / 2);
     var straight_pipe_length = this.cell_width / 2 - this.pipe_width / 2;
     draw_straight_pipe(straight_pipe_length);
 
@@ -70,15 +71,19 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   var draw_straight_piece = (function draw_straight_piece() {
-    this.ctx.translate(-this.cell_width / 2, this.pipe_width / 2);
     draw_straight_pipe(this.cell_width);
   }).bind(this);
 
-  var draw_piece = (function draw_piece(piece_draw_func, cellx, celly, rot_deg) {
+  var draw_piece = (function draw_piece(piece_draw_func, cellx, celly, rot_deg, color) {
+    this.ctx.strokeStyle = color || this.pipe_color;
     this.ctx.save();
+    // translate to the center of the cell we're going to draw
     this.ctx.translate(this.cell_width / 2, this.cell_height / 2);
     this.ctx.translate(this.cell_width * cellx, this.cell_height * celly);
+    // rotate the cell the desired number of degrees (about the center of the cell)
     this.ctx.rotate(rot_deg * Math.PI / 180);
+    // translate back to the left edge of the cell, so the drawing begins from there
+    this.ctx.translate(-this.cell_width / 2, this.pipe_width / 2);
     piece_draw_func();
     this.ctx.restore();
   }).bind(this);
@@ -86,7 +91,7 @@ function PipedreamEngine(opts) {
   clear_screen();
   draw_grid();
 
-  draw_piece(draw_elbow_piece, 0, 0, 0);
+  draw_piece(draw_elbow_piece, 0, 0, 0, 'green');
   draw_piece(draw_elbow_piece, 2, 2, -90);
   draw_piece(draw_elbow_piece, 2, 3, 90);
   draw_piece(draw_elbow_piece, 4, 4, -180);
