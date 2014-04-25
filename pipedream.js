@@ -1,6 +1,7 @@
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
                               window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
+
 function PipedreamEngine(opts) {
   this.background_color = opts.background_color || "gray";
   this.grid_color = opts.grid_color || "white";
@@ -11,49 +12,84 @@ function PipedreamEngine(opts) {
   this.grid_height = opts.grid_height || 7; // how tall the grid is, in number of cells
   this.grid_line_width = opts.grid_line_width || 1;
   this.pipe_width = opts.pipe_width || 8;
+  this.num_next_pieces = opts.num_next_pieces || 5;
   this.cell_width = this.width / this.grid_width;
   this.cell_height = this.height / this.grid_height;
+  this.piece_funcs = [ElbowPiece, StraightPiece];
+  this.next_pieces = []; // the next pieces that will be drawn when the player clicks an empty cell (FIFO queue)
+  this.cells = [];
 
   $canvas = $("#" + opts.canvas_id);
   this.ctx = $canvas[0].getContext("2d");
-  this.cells = [];
 
-  this.ctor = (function() {
-    for (var i = 0; i < this.grid_width; i++) {
-      var columnArray = [];
-      for (var j = 0; j < this.grid_height; j++) {
-        columnArray[j] = {};
-      }
-      this.cells[i] = columnArray;
-    }
-
+  this.ctor = (function PipedreamEngine_ctor() {
+    this.init_cells();
+    this.init_next_pieces();
     $canvas.attr({ width: this.width, height: this.height });
-    var mouseupfunc = (function(e){
-      var x = e.offsetX;
-      var y = e.offsetY;
-      var cellx = Math.floor(x / this.cell_width);
-      var celly = Math.floor(y / this.cell_height);
-      this.cells[cellx][celly].draw();
-    }).bind(this);
-    $canvas.mouseup(mouseupfunc);
+    $canvas.mouseup(onmouseup);
 
     this.clear_screen();
     this.draw_grid();
 
-    /*draw_piece(draw_elbow_piece, 0, 0, 0, 'green');
-      draw_piece(draw_elbow_piece, 2, 2, -90);
-      draw_piece(draw_elbow_piece, 2, 3, 90);
-      draw_piece(draw_elbow_piece, 4, 4, -180);
-      draw_piece(draw_straight_piece, 2, 0, 0);
-      draw_piece(draw_straight_piece, 4, 0, 90);*/
-
-    this.add_piece(ElbowPiece, 0, 0, 0);
-    this.add_piece(StraightPiece, 1, 0, 0, 'green');
-
   }).bind(this);
 
-  this.add_piece = (function add_piece_and_draw(piece_ctor, cellx, celly, rot_deg, color) {
-    this.cells[cellx][celly] = new piece_ctor({cellx: cellx, celly: celly, rot_deg: rot_deg, color: color, game_engine: this});
+  function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  this.add_next_piece = (function add_next_piece() {
+    var piece_ctor = this.piece_funcs[getRandomInt(0, this.piece_funcs.length - 1)];
+    var possible_rotations = [0, 90, 180];
+    var rot_deg = possible_rotations[getRandomInt(0, 2)];
+    this.next_pieces.push(new piece_ctor({rot_deg: rot_deg, game_engine: this}));
+  }).bind(this);
+
+  this.get_next_piece = (function get_next_piece() {
+    var next_piece = this.next_pieces.shift();
+    this.add_next_piece();
+    return next_piece;
+  }).bind(this);
+
+  this.init_next_pieces = (function init_next_pieces() {
+    for (var i = 0; i < this.num_next_pieces; i++) {
+      this.add_next_piece();
+    }
+  }).bind(this);
+
+  this.clear_cell = (function clear_cell(cellx, celly) {
+    this.ctx.beginPath();
+    this.ctx.lineWidth = this.grid_line_width;
+    this.ctx.strokeStyle = this.grid_color;
+    this.ctx.fillStyle = this.background_color;
+    this.ctx.rect(cellx * this.cell_width, celly * this.cell_height, this.cell_width - this.grid_line_width, this.cell_height - this.grid_line_width);
+    this.ctx.stroke();
+    this.ctx.fill();
+  }).bind(this);
+
+  var onmouseup = (function onmouseup(e){
+    var x = e.offsetX;
+    var y = e.offsetY;
+    var cellx = Math.floor(x / this.cell_width);
+    var celly = Math.floor(y / this.cell_height);
+    var cell = this.cells[cellx][celly];
+    if (cell !== null) {
+      this.clear_cell(cellx, celly);
+    }
+    var next_piece = this.get_next_piece();
+    next_piece.cellx = cellx;
+    next_piece.celly = celly;
+    this.cells[cellx][celly] = next_piece;
+    next_piece.draw();
+  }).bind(this);
+
+  this.init_cells = (function init_cells() {
+    for (var i = 0; i < this.grid_width; i++) {
+      var columnArray = [];
+      for (var j = 0; j < this.grid_height; j++) {
+        columnArray[j] = null;
+      }
+      this.cells[i] = columnArray;
+    }
   }).bind(this);
 
   this.clear_screen = (function clear_screen() {
@@ -66,13 +102,7 @@ function PipedreamEngine(opts) {
   this.draw_grid = (function draw_grid() {
     for (var i = 0; i < this.grid_width; i++) {
       for (var j = 0; j < this.grid_height; j++) {
-        var x = i * this.cell_width;
-        var y = j * this.cell_height;
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = this.grid_color;
-        this.ctx.lineWidth = this.grid_line_width;
-        this.ctx.rect(x, y, this.cell_width, this.cell_height);
-        this.ctx.stroke();
+        this.clear_cell(i, j);
       }
     }
   }).bind(this);
@@ -87,6 +117,7 @@ function StraightPiece(opts) {
   this.rot_deg = opts.rot_deg;
   this.color = opts.color || 'black';
   this.game_engine = opts.game_engine;
+  this.type = "Straight";
 
   this.draw_pipe_segment = (function draw_pipe_segment() {
       this.game_engine.ctx.beginPath();
@@ -124,6 +155,7 @@ function StraightPiece(opts) {
 
 function ElbowPiece(opts) {
   StraightPiece.call(this, opts);
+  this.type = "Elbow";
 
   this.render_func = (function render_func() {
     var straight_pipe_length = this.game_engine.cell_width / 2 - this.game_engine.pipe_width / 2;
