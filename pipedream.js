@@ -6,16 +6,17 @@ function PipedreamEngine(opts) {
   this.background_color = opts.background_color || "gray";
   this.grid_color = opts.grid_color || "white";
   this.pipe_color = opts.pipe_color || "black";
-  this.width = opts.canvas_width || 750;
+  this.width = opts.canvas_width || 825;
   this.height = opts.canvas_height || 525;
   this.grid_width = opts.grid_width || 10; // how wide the grid is, in number of cells
   this.grid_height = opts.grid_height || 7; // how tall the grid is, in number of cells
   this.grid_line_width = opts.grid_line_width || 1;
   this.pipe_width = opts.pipe_width || 8;
   this.num_next_pieces = opts.num_next_pieces || 5;
-  this.cell_width = this.width / this.grid_width;
+  this.toolbar_width = opts.toolbar_width || (this.width / this.grid_width);
+  this.cell_width = (this.width - this.toolbar_width) / this.grid_width;
   this.cell_height = this.height / this.grid_height;
-  this.piece_funcs = [ElbowPiece, StraightPiece];
+  this.piece_ctors = [ElbowPiece, StraightPiece];
   this.next_pieces = []; // the next pieces that will be drawn when the player clicks an empty cell (FIFO queue)
   this.cells = [];
 
@@ -30,6 +31,7 @@ function PipedreamEngine(opts) {
 
     this.clear_screen();
     this.draw_grid();
+    this.draw_next_pieces();
 
   }).bind(this);
 
@@ -38,14 +40,14 @@ function PipedreamEngine(opts) {
   }
 
   this.add_next_piece = (function add_next_piece() {
-    var piece_ctor = this.piece_funcs[getRandomInt(0, this.piece_funcs.length - 1)];
+    var piece_ctor = this.piece_ctors[getRandomInt(0, this.piece_ctors.length - 1)];
     var possible_rotations = [0, 90, 180];
     var rot_deg = possible_rotations[getRandomInt(0, 2)];
-    this.next_pieces.push(new piece_ctor({rot_deg: rot_deg, game_engine: this}));
+    this.next_pieces.unshift(new piece_ctor({rot_deg: rot_deg, game_engine: this}));
   }).bind(this);
 
   this.get_next_piece = (function get_next_piece() {
-    var next_piece = this.next_pieces.shift();
+    var next_piece = this.next_pieces.pop();
     this.add_next_piece();
     return next_piece;
   }).bind(this);
@@ -56,7 +58,20 @@ function PipedreamEngine(opts) {
     }
   }).bind(this);
 
+  this.draw_next_pieces = (function draw_next_pieces() {
+    for (var i = 0; i < this.num_next_pieces; i++) {
+      console.log(i*this.cell_height);
+      this.ctx.save();
+      this.ctx.translate(-this.toolbar_width, 0);
+      this.next_pieces[i].cellx = 0;
+      this.next_pieces[i].celly = i;
+      this.next_pieces[i].draw();
+      this.ctx.restore();
+    }
+  }).bind(this);
+
   this.clear_cell = (function clear_cell(cellx, celly) {
+    this.ctx.save();
     this.ctx.beginPath();
     this.ctx.lineWidth = this.grid_line_width;
     this.ctx.strokeStyle = this.grid_color;
@@ -64,22 +79,21 @@ function PipedreamEngine(opts) {
     this.ctx.rect(cellx * this.cell_width, celly * this.cell_height, this.cell_width - this.grid_line_width, this.cell_height - this.grid_line_width);
     this.ctx.stroke();
     this.ctx.fill();
+    this.ctx.restore();
   }).bind(this);
 
   var onmouseup = (function onmouseup(e){
-    var x = e.offsetX;
+    var x = e.offsetX - this.toolbar_width;
     var y = e.offsetY;
     var cellx = Math.floor(x / this.cell_width);
     var celly = Math.floor(y / this.cell_height);
     var cell = this.cells[cellx][celly];
-    if (cell !== null) {
-      this.clear_cell(cellx, celly);
-    }
     var next_piece = this.get_next_piece();
     next_piece.cellx = cellx;
     next_piece.celly = celly;
     this.cells[cellx][celly] = next_piece;
     next_piece.draw();
+    this.draw_next_pieces();
   }).bind(this);
 
   this.init_cells = (function init_cells() {
@@ -100,11 +114,14 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   this.draw_grid = (function draw_grid() {
+    this.ctx.save();
+    this.ctx.translate(this.toolbar_width, 0);
     for (var i = 0; i < this.grid_width; i++) {
       for (var j = 0; j < this.grid_height; j++) {
         this.clear_cell(i, j);
       }
     }
+    this.ctx.restore();
   }).bind(this);
 
 
@@ -141,6 +158,8 @@ function StraightPiece(opts) {
   this.draw = (function draw() {
     this.game_engine.ctx.save();
     this.game_engine.ctx.strokeStyle = this.color || this.pipe_color;
+    this.game_engine.ctx.translate(this.game_engine.toolbar_width, 0);
+    this.game_engine.clear_cell(this.cellx, this.celly);
     // translate to the center of the cell we're going to draw
     this.game_engine.ctx.translate(this.game_engine.cell_width / 2, this.game_engine.cell_height / 2);
     this.game_engine.ctx.translate(this.game_engine.cell_width * this.cellx, this.game_engine.cell_height * this.celly);
