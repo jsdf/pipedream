@@ -41,8 +41,8 @@ function PipedreamEngine(opts) {
 
   this.add_next_piece = (function add_next_piece() {
     var piece_ctor = this.piece_ctors[getRandomInt(0, this.piece_ctors.length - 1)];
-    var possible_rotations = [0, 90, 180];
-    var rot_deg = possible_rotations[getRandomInt(0, 2)];
+    var possible_rotations = [0, 90, 180, 270];
+    var rot_deg = possible_rotations[getRandomInt(0, possible_rotations.length)];
     this.next_pieces.unshift(new piece_ctor({rot_deg: rot_deg, game_engine: this}));
   }).bind(this);
 
