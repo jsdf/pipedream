@@ -145,8 +145,7 @@ function StraightPiece(opts) {
     this.game_engine.ctx.save();
     this.game_engine.ctx.strokeStyle = color || this.game_engine.pipe_color;
     this.game_engine.ctx.beginPath();
-    // a lineWidth of 1 makes the line look translucent sometimes, why?
-    this.game_engine.ctx.lineWidth = 2;
+    this.game_engine.ctx.lineWidth = 1;
     this.game_engine.ctx.moveTo(0, 0);
     this.game_engine.ctx.lineTo(0, -1 * this.game_engine.pipe_width);
     this.game_engine.ctx.stroke();
@@ -176,6 +175,8 @@ function StraightPiece(opts) {
     this.game_engine.ctx.rotate(this.rot_deg * Math.PI / 180);
     // translate back to the left edge of the cell, so the drawing begins from there
     this.game_engine.ctx.translate(-this.game_engine.cell_width / 2, this.game_engine.pipe_width / 2);
+    // https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Canvas_tutorial/Applying_styles_and_colors#A_lineWidth_example
+    this.game_engine.ctx.translate(0.5, 0);
     this.render_func();
     this.game_engine.ctx.restore();
   }).bind(this);
