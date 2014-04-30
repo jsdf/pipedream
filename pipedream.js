@@ -145,7 +145,8 @@ function StraightPiece(opts) {
     this.game_engine.ctx.save();
     this.game_engine.ctx.strokeStyle = color || this.game_engine.pipe_color;
     this.game_engine.ctx.beginPath();
-    this.game_engine.ctx.lineWidth = 1;
+    // a lineWidth of 1 makes the line look translucent sometimes, why?
+    this.game_engine.ctx.lineWidth = 2;
     this.game_engine.ctx.moveTo(0, 0);
     this.game_engine.ctx.lineTo(0, -1 * this.game_engine.pipe_width);
     this.game_engine.ctx.stroke();
