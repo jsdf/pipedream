@@ -34,7 +34,7 @@ function PipedreamEngine(opts) {
 
     this.clear_screen();
     this.draw_grid();
-    this.draw_next_pieces();
+    this.draw_toolbar();
 
   }).bind(this);
 
@@ -61,16 +61,34 @@ function PipedreamEngine(opts) {
     }
   }).bind(this);
 
+  this.draw_toolbar = (function draw_toolbar() {
+    this.ctx.save();
+    this.ctx.translate(-this.toolbar_width, 0);
+    this.draw_next_pieces();
+    this.ctx.restore();
+    this.draw_toolbar_buttons();
+  }).bind(this);
+
   this.draw_next_pieces = (function draw_next_pieces() {
     for (var i = 0; i < this.num_next_pieces; i++) {
-      console.log(i*this.cell_height);
-      this.ctx.save();
-      this.ctx.translate(-this.toolbar_width, 0);
       this.next_pieces[i].cellx = 0;
       this.next_pieces[i].celly = i;
       this.next_pieces[i].draw();
-      this.ctx.restore();
     }
+  }).bind(this);
+
+  this.fill_pipes = (function fill_pipes() {
+    console.log("fill_pipes");
+  }).bind(this);
+
+  this.draw_toolbar_buttons = (function draw_toolbar_buttons() {
+    var dx = this.cell_width / 6;
+    var dy = this.num_next_pieces * this.cell_height;
+    var v1 = {x: 15+dx, y: 30+dy};
+    var v2 = {x: dx, y: 40+dy};
+    var v3 = {x: dx, y: 20+dy};
+    this.playbtn = new PlayButton({v1: v1, v2: v2, v3: v3, ctx: this.ctx, onclick: this.fill_pipes});
+    this.playbtn.draw();
   }).bind(this);
 
   this.clear_cell = (function clear_cell(cellx, celly) {
@@ -85,18 +103,24 @@ function PipedreamEngine(opts) {
     this.ctx.restore();
   }).bind(this);
 
+
+ 
   var onmouseup = (function onmouseup(e){
     var x = e.offsetX - this.toolbar_width;
     var y = e.offsetY;
-    var cellx = Math.floor(x / this.cell_width);
-    var celly = Math.floor(y / this.cell_height);
-    var cell = this.cells[cellx][celly];
-    var next_piece = this.get_next_piece();
-    next_piece.cellx = cellx;
-    next_piece.celly = celly;
-    this.cells[cellx][celly] = next_piece;
-    next_piece.draw();
-    this.draw_next_pieces();
+    if (x > 0) {
+      var cellx = Math.floor(x / this.cell_width);
+      var celly = Math.floor(y / this.cell_height);
+      var cell = this.cells[cellx][celly];
+      var next_piece = this.get_next_piece();
+      next_piece.cellx = cellx;
+      next_piece.celly = celly;
+      this.cells[cellx][celly] = next_piece;
+      next_piece.draw();
+      this.draw_toolbar();
+    }
+    this.playbtn.click(e.offsetX, e.offsetY);
+
   }).bind(this);
 
   this.init_cells = (function init_cells() {
@@ -128,7 +152,6 @@ function PipedreamEngine(opts) {
     }
     this.ctx.restore();
   }).bind(this);
-
 
   this.ctor();
 }
@@ -202,3 +225,39 @@ function ElbowPiece(opts) {
 // see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create
 ElbowPiece.prototype = Object.create(StraightPiece.prototype);
 ElbowPiece.prototype.constructor = ElbowPiece;
+
+function PlayButton(opts) {
+    this.v1 = opts.v1;
+    this.v2 = opts.v2;
+    this.v3 = opts.v3;
+    this.onclick = opts.onclick;
+    this.ctx = opts.ctx;
+
+    this.PointInTriangle = (function PointInTriangle(pt, v1, v2, v3) {
+      var sign = function(p1, p2, p3) {
+        return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+      }
+
+      var b1 = sign(pt, v1, v2) < 0;
+      var b2 = sign(pt, v2, v3) < 0;
+      var b3 = sign(pt, v3, v1) < 0;
+
+      return b1 == b2 && b2 == b3;
+    }).bind(this);
+
+    this.click = (function click(x, y) {
+      if (this.PointInTriangle({x: x, y: y}, this.v1, this.v2, this.v3)) {
+        this.onclick();
+      }
+    });
+
+    this.draw = (function draw() {
+      this.ctx.save();
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.v1.x, this.v1.y);
+      this.ctx.lineTo(this.v2.x, this.v2.y);
+      this.ctx.lineTo(this.v3.x, this.v3.y);
+      this.ctx.fill();  
+      this.ctx.restore();
+    });
+}
