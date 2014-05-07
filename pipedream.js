@@ -78,7 +78,9 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   this.fill_pipes = (function fill_pipes() {
-    console.log("fill_pipes");
+    this.cells[0][0].color = 'green';
+    this.cells[0][0].draw();
+    console.log(this.cells[0][0]);
   }).bind(this);
 
   this.draw_toolbar_buttons = (function draw_toolbar_buttons() {
@@ -103,8 +105,6 @@ function PipedreamEngine(opts) {
     this.ctx.restore();
   }).bind(this);
 
-
- 
   var onmouseup = (function onmouseup(e){
     var x = e.offsetX - this.toolbar_width;
     var y = e.offsetY;
@@ -119,7 +119,7 @@ function PipedreamEngine(opts) {
       next_piece.draw();
       this.draw_toolbar();
     }
-    this.playbtn.click(e.offsetX, e.offsetY);
+    this.playbtn.tryclick(e.offsetX, e.offsetY);
 
   }).bind(this);
 
@@ -164,9 +164,9 @@ function StraightPiece(opts) {
   this.game_engine = opts.game_engine;
   this.type = "Straight";
 
-  this.draw_pipe_segment = (function draw_pipe_segment(color) {
+  this.draw_pipe_segment = (function draw_pipe_segment() {
     this.game_engine.ctx.save();
-    this.game_engine.ctx.strokeStyle = color || this.game_engine.pipe_color;
+    this.game_engine.ctx.strokeStyle = this.color || this.game_engine.pipe_color;
     this.game_engine.ctx.beginPath();
     this.game_engine.ctx.lineWidth = 1;
     this.game_engine.ctx.moveTo(0, 0);
@@ -177,7 +177,7 @@ function StraightPiece(opts) {
   
   this.draw_straight_pipe = (function draw_straight_pipe(length) {
     for (var i = 0; i < length; i++) {
-      this.draw_pipe_segment(this.game_engine.pipe_color);
+      this.draw_pipe_segment();
       this.game_engine.ctx.translate(1, 0);
     }
   }).bind(this);
@@ -245,7 +245,7 @@ function PlayButton(opts) {
       return b1 == b2 && b2 == b3;
     }).bind(this);
 
-    this.click = (function click(x, y) {
+    this.tryclick = (function tryclick(x, y) {
       if (this.PointInTriangle({x: x, y: y}, this.v1, this.v2, this.v3)) {
         this.onclick();
       }
