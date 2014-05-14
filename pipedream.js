@@ -36,17 +36,31 @@ function PipedreamEngine(opts) {
     this.draw_grid();
     this.draw_toolbar();
 
+    this.add_start_piece();
   }).bind(this);
 
-  function getRandomInt(min, max) {
+  function get_random_int(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  this.add_next_piece = (function add_next_piece() {
-    var piece_ctor = this.piece_ctors[getRandomInt(0, this.piece_ctors.length - 1)];
+  function get_random_rotation() {
     var possible_rotations = [0, 90, 180, 270];
-    var rot_deg = possible_rotations[getRandomInt(0, possible_rotations.length)];
-    this.next_pieces.unshift(new piece_ctor({rot_deg: rot_deg, game_engine: this}));
+    return possible_rotations[get_random_int(0, possible_rotations.length - 1)];
+  }
+
+  this.add_start_piece = (function add_start_piece() {
+    this.start_piece = new StartPiece({rot_deg: get_random_rotation(), game_engine: this});
+    var cellx = get_random_int(0, this.grid_width - 1);
+    var celly = get_random_int(0, this.grid_height - 1);
+    this.start_piece.cellx = cellx;
+    this.start_piece.celly = celly;
+    this.cells[cellx][celly] = this.start_piece;
+    this.start_piece.draw();
+  }).bind(this);
+
+  this.add_next_piece = (function add_next_piece() {
+    var piece_ctor = this.piece_ctors[get_random_int(0, this.piece_ctors.length - 1)];
+    this.next_pieces.unshift(new piece_ctor({rot_deg: get_random_rotation(), game_engine: this}));
   }).bind(this);
 
   this.get_next_piece = (function get_next_piece() {
@@ -78,9 +92,8 @@ function PipedreamEngine(opts) {
   }).bind(this);
 
   this.fill_pipes = (function fill_pipes() {
-    this.cells[0][0].color = 'green';
-    this.cells[0][0].draw();
-    console.log(this.cells[0][0]);
+    this.start_piece.color = 'green';
+    this.start_piece.draw();
   }).bind(this);
 
   this.draw_toolbar_buttons = (function draw_toolbar_buttons() {
@@ -162,7 +175,7 @@ function StraightPiece(opts) {
   this.rot_deg = opts.rot_deg;
   this.color = opts.color || 'black';
   this.game_engine = opts.game_engine;
-  this.type = "Straight";
+  this.description = "Straight";
 
   this.draw_pipe_segment = (function draw_pipe_segment() {
     this.game_engine.ctx.save();
@@ -205,7 +218,7 @@ function StraightPiece(opts) {
 
 function ElbowPiece(opts) {
   StraightPiece.call(this, opts);
-  this.type = "Elbow";
+  this.description = "Elbow";
 
   this.render_func = (function render_func() {
     var straight_pipe_length = this.game_engine.cell_width / 2 - this.game_engine.pipe_width / 2;
@@ -217,6 +230,16 @@ function ElbowPiece(opts) {
       this.game_engine.ctx.rotate(Math.PI / 180);
     }
 
+    this.draw_straight_pipe(straight_pipe_length);
+  }).bind(this);
+}
+
+function StartPiece(opts) {
+  StraightPiece.call(this, opts);
+  this.description = "Start";
+
+  this.render_func = (function render_func() {
+    var straight_pipe_length = this.game_engine.cell_width / 2 - this.game_engine.pipe_width / 2;
     this.draw_straight_pipe(straight_pipe_length);
   }).bind(this);
 }
