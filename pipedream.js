@@ -221,7 +221,7 @@ function ElbowPiece(opts) {
   this.description = "Elbow";
 
   this.render_func = (function render_func() {
-    var straight_pipe_length = this.game_engine.cell_width / 2 - this.game_engine.pipe_width / 2;
+    var straight_pipe_length = this.game_engine.cell_width / 2;
     this.draw_straight_pipe(straight_pipe_length);
 
     // the elbow joint is drawn in this loop
@@ -241,6 +241,30 @@ function StartPiece(opts) {
   this.render_func = (function render_func() {
     var straight_pipe_length = this.game_engine.cell_width / 2 - this.game_engine.pipe_width / 2;
     this.draw_straight_pipe(straight_pipe_length);
+
+    function draw_arrow(game_engine) {
+      game_engine.ctx.save();
+      game_engine.ctx.strokeStyle = 'white';
+      game_engine.ctx.lineWidth = 1;
+
+      // tail
+      game_engine.ctx.beginPath();
+      game_engine.ctx.moveTo(0, -game_engine.pipe_width / 2);
+      game_engine.ctx.lineTo(-straight_pipe_length / 2, -game_engine.pipe_width / 2);
+      game_engine.ctx.stroke();
+
+      // head
+      game_engine.ctx.beginPath();
+      game_engine.ctx.moveTo(-straight_pipe_length / 2 + straight_pipe_length / 8, -game_engine.pipe_width * (3/4));
+      game_engine.ctx.lineTo(-straight_pipe_length / 2, -game_engine.pipe_width / 2);
+      game_engine.ctx.lineTo(-straight_pipe_length / 2 + straight_pipe_length / 8, -game_engine.pipe_width * (1/4));
+      game_engine.ctx.stroke();
+
+      game_engine.ctx.restore();
+    }
+
+    draw_arrow(this.game_engine);
+
   }).bind(this);
 }
 
